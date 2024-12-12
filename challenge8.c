@@ -93,8 +93,7 @@ int main() {
 
     char line[MAP_DIM+3];
     int l_num = 0;
-    int g_pos_x, g_pos_y;
-    int dir; // up 0, right 1, down 2, left 3
+
     
     while (fgets(line, sizeof(line), file)) {
         line[strcspn(line, "\r\n")] = '\0';
