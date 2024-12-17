@@ -63,6 +63,9 @@
         "unordered_map": "cpp",
         "xhash": "cpp",
         "set": "cpp",
-        "regex": "cpp"
+        "regex": "cpp",
+        "deque": "cpp",
+        "queue": "cpp",
+        "unordered_set": "cpp"
     }
 }

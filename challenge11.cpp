@@ -8,7 +8,11 @@
 #include <omp.h>
 #include <cmath>
 #include <unordered_map>
-
+#include <sstream>
+#include <algorithm>
+#include <unordered_set>
+#include <cassert>
+#include <queue>
 
 std::string blink(const std::string& input){
     std::string output;
@@ -77,24 +81,13 @@ int numDigits(long long n) {
     return digits > 0 ? digits : 1; // Handles n=0 correctly
 }
 
-#include <unordered_map>
-#include <vector>
-#include <cmath>
-#include <omp.h>
-
-// Memoization map
-std::unordered_map<long long, std::vector<long long>> memo;
-
 // Optimized blink_int
-std::vector<long long> blink_int(long long input) {
-    // Check the memo map first
-    #pragma omp critical
-    if (memo.find(input) != memo.end()) {
-        return memo[input];
-    }
+
+std::vector<unsigned long long> blink_int(unsigned long long input) {
 
     // Perform the computation
-    std::vector<long long> output;
+    std::vector<unsigned long long> output;
+
     if (input == 0) {
         output.push_back(1);
     } else {
@@ -107,29 +100,27 @@ std::vector<long long> blink_int(long long input) {
             output.push_back(input * 2024);
         }
     }
-
-    // Store the result in the memo map
-    #pragma omp critical
-    memo[input] = output;
-
     return output;
 }
 
 
 // Optimized recursive function
-long long parse_iter_recursive(long long input, int c_iter, int max) {
-    if (c_iter == max) return 1;
-
-
+std::unordered_map<unsigned long long, unsigned long long> parse_iter_part2(std::unordered_map<unsigned long long, unsigned long long> input) {
+    std::unordered_map<unsigned long long, unsigned long long> tmp;
     long long n_stones = 0;
-    std::vector<long long> blink_result = blink_int(input);
+
 
     // #pragma omp parallel for reduction(+:n_stones)
-    for (size_t i = 0; i < blink_result.size(); ++i) {
-        n_stones += parse_iter_recursive(blink_result[i], c_iter + 1, max);
+    for (auto stone : input) {
+        unsigned long long s = stone.first;
+        unsigned long long c = stone.second;
+        std::vector<unsigned long long> blink_result = blink_int(s);
+        for (long long i:blink_result){
+            tmp[i] += c;
+        }
     }
 
-    return n_stones;
+    return tmp;
 }
 
 
@@ -153,29 +144,33 @@ int main() {
     std::istringstream strstr(stones_input);
     std::string stone;
 
+    std::unordered_map<unsigned long long, unsigned long long> map;
     while (strstr >> stone) {
-        stones.push_back(stone);
+        map[std::stoull(stone)] = 1;
     }
 
-    // Apply `parse_iter` 25 times
-    // for (int i = 0; i < 30; i++){
-    //     stones_input = parse_iter(stones_input);
-    //     int out = get_final_count(stones_input);
-    //     std::cout << "Iteration:" << out << std::endl;
-    // }
     long long output = 0;
+    // Apply `parse_iter` 25 times
+    for (int i = 0; i < 75; i++){
 
-    // Parallelize the loop
-    #pragma omp parallel for reduction(+:output)
-    for (int i = 0; i < stones.size(); ++i) {
-        long long o = parse_iter_recursive(std::stoi(stones[i]), 0, 75);
-        output += o;
-
-        // To avoid race conditions with stdout, you may use a critical section or print after the loop
-        printf("Done\n");
+        map = parse_iter_part2(map);
     }
 
-    printf("N stones: %lld\n", output);
+    for (auto sto : map) {
+        output += sto.second;
+    }
+    std::cout << "Iteration:" << output << std::endl;
+    // Parallelize the loop
+    // #pragma omp parallel for reduction(+:output)
+    // for (int i = 0; i < stones.size(); ++i) {
+    //     long long o = parse_iter_recursive(std::stoi(stones[i]), 0, 75, map);
+    //     output += o;
+
+    //     // To avoid race conditions with stdout, you may use a critical section or print after the loop
+    //     printf("Done\n");
+    // }
+
+    // printf("N stones: %lld\n", output);
 
 
     // int out = get_final_count(stones_input);
